@@ -13,6 +13,24 @@ typedef struct {
     const Str* ref_str;
 } StrSlice;
 
+typedef struct {} PrefixTree_WordNumbers;
+
+#define MAX_PREFIX_TREE_BRANCH_COUNT 32
+typedef struct {
+    unsigned int branch_count;
+    char branch_keys[MAX_PREFIX_TREE_BRANCH_COUNT];
+    PrefixTree_WordNumbers* branch_values[MAX_PREFIX_TREE_BRANCH_COUNT];
+    bool is_end;
+} PrefixTree_WordNumbers;
+
+PrefixTree_WordNumbers* pt_next(PrefixTree_WordNumbers* pt, const char ch)
+{
+    for (unsigned int i = 0; i < branch_count; i++)
+    {
+        // TODO(TeYo): Continue from here
+    }
+}
+
 Str init_str(char* c_str)
 {
     unsigned int i = 0;
@@ -95,18 +113,14 @@ char* read_file(char* file_name)
     return code;
 }
 
-unsigned int is_num_word_size = 0;
-char is_num_word_buffer[512];
 bool is_num(const char ch)
 {
-    if ((ch >= 48 && ch <= 57))
-        return true;
+    return (ch >= 48 && ch <= 57);
+}
 
-    is_num_word_buffer[is_num_word_size] = ch;
-    is_num_word_size++;
-    // TODO(TeYo): Continue from here
-
-    return ;
+bool is_word_num(const PrefixTree* in_pt, PrefixTree* out_next_pt)
+{
+    
 }
 
 int main(int argc, char argv[])
