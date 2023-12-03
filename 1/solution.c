@@ -13,34 +13,117 @@ typedef struct {
     const Str* ref_str;
 } StrSlice;
 
-typedef struct {} PrefixTree_WordNumbers;
-
 #define MAX_PREFIX_TREE_BRANCH_COUNT 32
-typedef struct {
+#define PT_NO_VALUE -1
+typedef struct PrefixTree_WordNumbers {
+    struct PrefixTree_WordNumbers* parent;
     unsigned int branch_count;
     char branch_keys[MAX_PREFIX_TREE_BRANCH_COUNT];
-    PrefixTree_WordNumbers* branch_values[MAX_PREFIX_TREE_BRANCH_COUNT];
-    bool is_end;
+    struct PrefixTree_WordNumbers* branch_values[MAX_PREFIX_TREE_BRANCH_COUNT];
+    int value;
 } PrefixTree_WordNumbers;
 
 PrefixTree_WordNumbers* pt_next(PrefixTree_WordNumbers* pt, const char ch)
 {
-    for (unsigned int i = 0; i < branch_count; i++)
-    {
-        // TODO(TeYo): Continue from here
+    printf("hi\n");
+    for (unsigned int i = 0; i < pt->branch_count; i++) {
+        if (pt->branch_keys[i] == ch) {
+            return pt->branch_values[i];
+        }
     }
+    printf("hello: %c\n", ch);
+    return NULL;
 }
 
-Str init_str(char* c_str)
+PrefixTree_WordNumbers* pt_base(PrefixTree_WordNumbers* pt)
+{
+    PrefixTree_WordNumbers* base = pt;
+    while (base->parent != NULL) {
+        base = base->parent;
+    }
+    return base;
+}
+
+PrefixTree_WordNumbers* pt_add_node(PrefixTree_WordNumbers* pt, const char ch, int value)
+{
+    if (pt_next(pt, ch) == NULL) {
+        PrefixTree_WordNumbers* branch = (PrefixTree_WordNumbers*)malloc(sizeof(PrefixTree_WordNumbers));
+        branch->parent = pt;
+        branch->branch_count = 0;
+        branch->value = value;
+        pt->branch_values[pt->branch_count] = branch;
+        pt->branch_count++;
+        return branch;
+    }
+    return NULL;
+}
+
+// This function assumes that you CAN add the word
+void pt_add_word(PrefixTree_WordNumbers* pt, const Str* word, int value)
+{
+    PrefixTree_WordNumbers* curr = pt;
+    for (unsigned int i = 0; i < word->size; i++) {
+        PrefixTree_WordNumbers* new = pt_add_node(curr, word->c_str[i], PT_NO_VALUE);
+        if (new == NULL) {
+            curr = pt_next(curr, word->c_str[i]);
+        } else {
+            curr = new;
+        }
+    }
+    curr->value = value;
+}
+
+Str* init_str(Str* ptr, char* c_str)
 {
     unsigned int i = 0;
     while (c_str[i] != '\0') {
         i++;
     }
-    Str ret = {0};
-    ret.size = i + 1;
-    ret.c_str = c_str;
-    return ret;
+    ptr->size = i;
+    ptr->c_str = c_str;
+    return ptr;
+}
+
+PrefixTree_WordNumbers* init_forward_pt()
+{
+    PrefixTree_WordNumbers* base = (PrefixTree_WordNumbers*)malloc(sizeof(PrefixTree_WordNumbers));
+    base->parent = NULL;
+    base->branch_count = 0;
+    base->value = PT_NO_VALUE;
+    
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "zero"), 0);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "one"), 1);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "two"), 2);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "three"), 3);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "four"), 4);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "five"), 5);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "six"), 6);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "seven"), 7);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "eight"), 8);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)), "nine"), 9);
+    
+    return base;
+}
+
+PrefixTree_WordNumbers* init_backward_pt()
+{
+    PrefixTree_WordNumbers* base = (PrefixTree_WordNumbers*)malloc(sizeof(PrefixTree_WordNumbers));
+    base->parent = NULL;
+    base->branch_count = 0;
+    base->value = PT_NO_VALUE;
+    
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"orez"), 0);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"eno"), 1);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"owt"), 2);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"eerht"), 3);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"ruof"), 4);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"evif"), 5);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"xis"), 6);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"neves"), 7);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"thgie"), 8);
+    pt_add_word(base, init_str((Str*)malloc(sizeof(Str)),"enin"), 9);
+    
+    return base;
 }
 
 StrSlice init_str_slice(const Str* ref_str, unsigned int start, unsigned int end)
@@ -118,16 +201,30 @@ bool is_num(const char ch)
     return (ch >= 48 && ch <= 57);
 }
 
+/*
 bool is_word_num(const PrefixTree* in_pt, PrefixTree* out_next_pt)
 {
     
 }
+*/
 
-int main(int argc, char argv[])
+int main()
+{
+    PrefixTree_WordNumbers* forward = init_forward_pt();
+    PrefixTree_WordNumbers* curr = pt_next(forward, 'o');
+
+    //PrefixTree_WordNumbers* curr = pt_next(forward, 'o');
+    //curr = pt_next(curr, 'n');
+    //curr = pt_next(curr, 'e');
+    printf("one: %d\n", curr->value);
+}
+
+int main2(int argc, char argv[])
 {
     int result = 0;
-
-    Str input = init_str(read_file("input.txt"));
+    
+    Str input = {0};
+    init_str(&input, read_file("input.txt"));
     
     unsigned int last_line_end = 0;
     for (unsigned int i = 0; i < input.size; i++)
