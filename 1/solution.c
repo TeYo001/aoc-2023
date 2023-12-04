@@ -23,19 +23,17 @@ typedef struct PrefixTree_WordNumbers {
     int value;
 } PrefixTree_WordNumbers;
 
-PrefixTree_WordNumbers* pt_next(PrefixTree_WordNumbers* pt, const char ch)
+PrefixTree_WordNumbers* pt_next(const PrefixTree_WordNumbers* pt, const char ch)
 {
-    printf("hi\n");
     for (unsigned int i = 0; i < pt->branch_count; i++) {
         if (pt->branch_keys[i] == ch) {
             return pt->branch_values[i];
         }
     }
-    printf("hello: %c\n", ch);
     return NULL;
 }
 
-PrefixTree_WordNumbers* pt_base(PrefixTree_WordNumbers* pt)
+PrefixTree_WordNumbers* pt_base(const PrefixTree_WordNumbers* pt)
 {
     PrefixTree_WordNumbers* base = pt;
     while (base->parent != NULL) {
@@ -51,6 +49,7 @@ PrefixTree_WordNumbers* pt_add_node(PrefixTree_WordNumbers* pt, const char ch, i
         branch->parent = pt;
         branch->branch_count = 0;
         branch->value = value;
+        pt->branch_keys[pt->branch_count] = ch;
         pt->branch_values[pt->branch_count] = branch;
         pt->branch_count++;
         return branch;
@@ -162,6 +161,20 @@ int str_findl(const StrSlice* str, bool(*func)(const char))
     return -1;
 }
 
+int str_findl_word(const PrefixTree_WordNumbers* forward, const StrSlice* str)
+{
+    PrefixTree_WordNumbers* curr = forward;
+    for (unsigned int i = str->start; i < str->end; i++)
+    {
+        int value = parse_word_num(curr, &curr, )
+        if (test) {
+            return i;
+        }
+    }
+    
+    return -1;
+}
+
 int str_findr(const StrSlice* str, bool(*func)(const char))
 {
     for (unsigned int i = str->end; i >= str->start; i--)
@@ -201,25 +214,19 @@ bool is_num(const char ch)
     return (ch >= 48 && ch <= 57);
 }
 
-/*
-bool is_word_num(const PrefixTree* in_pt, PrefixTree* out_next_pt)
+int parse_word_num(const PrefixTree_WordNumbers* in_pt, PrefixTree_WordNumbers** out_next_pt, const char ch)
 {
-    
-}
-*/
-
-int main()
-{
-    PrefixTree_WordNumbers* forward = init_forward_pt();
-    PrefixTree_WordNumbers* curr = pt_next(forward, 'o');
-
-    //PrefixTree_WordNumbers* curr = pt_next(forward, 'o');
-    //curr = pt_next(curr, 'n');
-    //curr = pt_next(curr, 'e');
-    printf("one: %d\n", curr->value);
+    PrefixTree_WordNumbers* out;
+    out = pt_next(in_pt, ch);
+    if (out == NULL) {
+        *out_next_pt = pt_base(in_pt);
+        return false;
+    }
+    *out_next_pt = out;
+    return out->value;
 }
 
-int main2(int argc, char argv[])
+int main(int argc, char argv[])
 {
     int result = 0;
     
