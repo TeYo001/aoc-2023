@@ -161,20 +161,6 @@ int str_findl(const StrSlice* str, bool(*func)(const char))
     return -1;
 }
 
-int str_findl_word(const PrefixTree_WordNumbers* forward, const StrSlice* str)
-{
-    PrefixTree_WordNumbers* curr = forward;
-    for (unsigned int i = str->start; i < str->end; i++)
-    {
-        int value = parse_word_num(curr, &curr, )
-        if (test) {
-            return i;
-        }
-    }
-    
-    return -1;
-}
-
 int str_findr(const StrSlice* str, bool(*func)(const char))
 {
     for (unsigned int i = str->end; i >= str->start; i--)
@@ -226,6 +212,52 @@ int parse_word_num(const PrefixTree_WordNumbers* in_pt, PrefixTree_WordNumbers**
     return out->value;
 }
 
+int num_to_word_len(int num)
+{
+    const arr[10] = {
+        strlen("zero"),
+        strlen("one"),
+        strlen("two"),
+        strlen("three"),
+        strlen("four"),
+        strlen("five"),
+        strlen("six"),
+        strlen("seven"),
+        strlen("eight"),
+        strlen("nine")
+    };
+
+
+}
+
+int str_findl_word(const PrefixTree_WordNumbers* forward, const StrSlice* str, int* out_value)
+{
+    PrefixTree_WordNumbers* curr = forward;
+    for (unsigned int i = str->start; i < str->end; i++)
+    {
+        int value = parse_word_num(curr, &curr, str->ref_str->c_str[i]);
+        if (value != PT_NO_VALUE) {
+            return value;
+        }
+    }
+    
+    return -1;
+}
+
+int str_findr_word(const PrefixTree_WordNumbers* backward, const StrSlice* str, int* out_value)
+{
+    PrefixTree_WordNumbers* curr = backward; 
+    for (unsigned int i = str->end; i >= str->start; i--)
+    {
+        int value = parse_word_num(curr, &curr, str->ref_str->c_str[i]);
+        if (value != PT_NO_VALUE) {
+            return ;
+        }
+    }
+    
+    return -1;
+}
+
 int main(int argc, char argv[])
 {
     int result = 0;
@@ -233,14 +265,18 @@ int main(int argc, char argv[])
     Str input = {0};
     init_str(&input, read_file("input.txt"));
     
+    PrefixTree_WordNumbers* forward = init_forward_pt();
+    PrefixTree_WordNumbers* backward = init_backward_pt();
+
     unsigned int last_line_end = 0;
     for (unsigned int i = 0; i < input.size; i++)
     {
         if (input.c_str[i] == '\n') {
             StrSlice slice = init_str_slice(&input, last_line_end, i);
             int left_num_idx = str_findl(&slice, is_num);
+            int left_num_word_value = str_findl_word(forward, &slice);
             int right_num_idx = str_findr(&slice, is_num);
-
+            int right_num_word_value = str_findr_word(backward, &slice);
             if (left_num_idx == -1 || right_num_idx == -1) {
                 printf("ERROR\n");
                 exit(1);
