@@ -273,20 +273,40 @@ int main(int argc, char argv[])
     {
         if (input.c_str[i] == '\n') {
             StrSlice slice = init_str_slice(&input, last_line_end, i);
+            
             int left_num_idx = str_findl(&slice, is_num);
-            int left_num_word_value = str_findl_word(forward, &slice);
+            int left_num_word_value;
+            int left_num_word_idx = str_findl_word(forward, &slice, &left_num_word_value);
             int right_num_idx = str_findr(&slice, is_num);
-            int right_num_word_value = str_findr_word(backward, &slice);
+            int right_num_word_value;
+            int right_num_word_idx = str_findr_word(backward, &slice, &right_num_word_value);
+            
             if (left_num_idx == -1 || right_num_idx == -1) {
                 printf("ERROR\n");
                 exit(1);
             }
+            
+            if (right_num_idx == right_num_word_idx ||
+                left_num_idx == left_num_word_idx) {
+                printf("ERROR\n");
+                exit(1);
+            }
+
             char* num_str = (char*)malloc(sizeof(char) * 3);
-            num_str[0] = slice.ref_str->c_str[left_num_idx];
-            num_str[1] = slice.ref_str->c_str[right_num_idx];
+            
+            if (left_num_idx < left_num_word_idx)
+                num_str[0] = slice.ref_str->c_str[left_num_idx];
+            else {
+                num_str[0] = itoa(left_num_word_value);
+            }
+            if (right_num_idx < right_num_word_idx) {
+                num_str[1] = slice.ref_str->c_str[right_num_idx];
+            } else {
+                num_str[1] = itoa(right_num_word_idx);
+            }
+
             num_str[2] = '\0';
             result += atoi(num_str);
-
             last_line_end = i;
         }
     }
