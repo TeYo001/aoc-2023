@@ -42,13 +42,13 @@ PrefixTree_WordNumbers* pt_base(const PrefixTree_WordNumbers* pt)
     return base;
 }
 
-PrefixTree_WordNumbers* pt_add_node(PrefixTree_WordNumbers* pt, const char ch, int value)
+PrefixTree_WordNumbers* pt_add_node(PrefixTree_WordNumbers* pt, const char ch)
 {
     if (pt_next(pt, ch) == NULL) {
         PrefixTree_WordNumbers* branch = (PrefixTree_WordNumbers*)malloc(sizeof(PrefixTree_WordNumbers));
         branch->parent = pt;
         branch->branch_count = 0;
-        branch->value = value;
+        branch->value = PT_NO_VALUE;
         pt->branch_keys[pt->branch_count] = ch;
         pt->branch_values[pt->branch_count] = branch;
         pt->branch_count++;
@@ -62,7 +62,7 @@ void pt_add_word(PrefixTree_WordNumbers* pt, const Str* word, int value)
 {
     PrefixTree_WordNumbers* curr = pt;
     for (unsigned int i = 0; i < word->size; i++) {
-        PrefixTree_WordNumbers* new = pt_add_node(curr, word->c_str[i], PT_NO_VALUE);
+        PrefixTree_WordNumbers* new = pt_add_node(curr, word->c_str[i]);
         if (new == NULL) {
             curr = pt_next(curr, word->c_str[i]);
         } else {
@@ -163,13 +163,13 @@ int str_findl(const StrSlice* str, bool(*func)(const char))
 
 int str_findr(const StrSlice* str, bool(*func)(const char))
 {
-    for (unsigned int i = str->end; i >= str->start; i--)
+    for (int i = str->end - 1; i >= str->start; i--)
     {
+        if (i < 0) break;
         if (func(str->ref_str->c_str[i])) {
             return i;
         }
     }
-
     return -1;
 }
 
@@ -205,8 +205,13 @@ int parse_word_num(const PrefixTree_WordNumbers* in_pt, PrefixTree_WordNumbers**
     PrefixTree_WordNumbers* out;
     out = pt_next(in_pt, ch);
     if (out == NULL) {
+        if (in_pt->parent != NULL) {
+            *out_next_pt = pt_base(in_pt);
+            return parse_word_num(*out_next_pt, out_next_pt, ch);
+        }
+
         *out_next_pt = pt_base(in_pt);
-        return false;
+        return PT_NO_VALUE;
     }
     *out_next_pt = out;
     return out->value;
@@ -214,7 +219,7 @@ int parse_word_num(const PrefixTree_WordNumbers* in_pt, PrefixTree_WordNumbers**
 
 int num_to_word_len(int num)
 {
-    const arr[10] = {
+    const int arr[10] = {
         strlen("zero"),
         strlen("one"),
         strlen("two"),
@@ -227,34 +232,38 @@ int num_to_word_len(int num)
         strlen("nine")
     };
 
-
+    return arr[num];
 }
 
 int str_findl_word(const PrefixTree_WordNumbers* forward, const StrSlice* str, int* out_value)
 {
     PrefixTree_WordNumbers* curr = forward;
-    for (unsigned int i = str->start; i < str->end; i++)
+    for (int i = str->start; i < str->end; i++)
     {
         int value = parse_word_num(curr, &curr, str->ref_str->c_str[i]);
         if (value != PT_NO_VALUE) {
-            return value;
+            *out_value = value;
+            return i;
         }
     }
     
+    *out_value = PT_NO_VALUE;
     return -1;
 }
 
 int str_findr_word(const PrefixTree_WordNumbers* backward, const StrSlice* str, int* out_value)
 {
     PrefixTree_WordNumbers* curr = backward; 
-    for (unsigned int i = str->end; i >= str->start; i--)
+    for (int i = str->end - 1; i >= str->start; i--)
     {
+        if (i < 0) break;
         int value = parse_word_num(curr, &curr, str->ref_str->c_str[i]);
         if (value != PT_NO_VALUE) {
-            return ;
+            *out_value = value;
+            return i;
         }
     }
-    
+    *out_value = PT_NO_VALUE;
     return -1;
 }
 
@@ -273,41 +282,57 @@ int main(int argc, char argv[])
     {
         if (input.c_str[i] == '\n') {
             StrSlice slice = init_str_slice(&input, last_line_end, i);
-            
             int left_num_idx = str_findl(&slice, is_num);
             int left_num_word_value;
             int left_num_word_idx = str_findl_word(forward, &slice, &left_num_word_value);
             int right_num_idx = str_findr(&slice, is_num);
             int right_num_word_value;
             int right_num_word_idx = str_findr_word(backward, &slice, &right_num_word_value);
-            
-            if (left_num_idx == -1 || right_num_idx == -1) {
-                printf("ERROR\n");
+
+            if (left_num_idx == -1 && left_num_word_idx == -1) {
+                printf("2 ERROR\n");
+                exit(1);
+            }
+
+            if (right_num_idx == -1 && right_num_word_idx == -1) {
+                printf("1 ERROR\n");
                 exit(1);
             }
             
             if (right_num_idx == right_num_word_idx ||
                 left_num_idx == left_num_word_idx) {
+                printf("cringe\n");
                 printf("ERROR\n");
                 exit(1);
             }
-
             char* num_str = (char*)malloc(sizeof(char) * 3);
+            char* word_str_buffer = (char*)malloc(sizeof(char) * 2);
+
+            bool is_left_num = left_num_idx < left_num_word_idx;
+            is_left_num |= left_num_word_idx == -1;
+            is_left_num &= left_num_idx != -1;
             
-            if (left_num_idx < left_num_word_idx)
+            bool is_right_num = right_num_idx > right_num_word_idx;
+            is_right_num |= right_num_word_idx == -1;
+            is_right_num &= right_num_idx != -1;
+
+            if (is_left_num) {
                 num_str[0] = slice.ref_str->c_str[left_num_idx];
-            else {
-                num_str[0] = itoa(left_num_word_value);
+            } else {
+                num_str[0] = itoa(left_num_word_value, word_str_buffer, 10)[0];
             }
-            if (right_num_idx < right_num_word_idx) {
+            if (is_right_num) {
                 num_str[1] = slice.ref_str->c_str[right_num_idx];
             } else {
-                num_str[1] = itoa(right_num_word_idx);
+                num_str[1] = itoa(right_num_word_value, word_str_buffer, 10)[0];
             }
-
+            
             num_str[2] = '\0';
             result += atoi(num_str);
             last_line_end = i;
+            
+            free(num_str);
+            free(word_str_buffer);
         }
     }
 
